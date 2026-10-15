@@ -1,0 +1,10 @@
+{
+  "description": "Enables non-technical users to import, analyze, relate, transform, and consolidate multiple spreadsheet files into clear, consolidated data reports.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

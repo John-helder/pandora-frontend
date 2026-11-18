@@ -33,6 +33,103 @@ export interface DatasetJoinResponse {
   data: Record<string, unknown>[]
 }
 
+export type PipelineOperation =
+  | { operation_id: string; type: "SELECT" | "DROP"; columns: string[] }
+  | {
+      operation_id: string
+      type: "RENAME"
+      columns: Record<string, string>
+    }
+  | {
+      operation_id: string
+      type: "FILTER"
+      column: string
+      operator: FilterOperator
+      value?: string | number | boolean
+    }
+  | {
+      operation_id: string
+      type: "SORT"
+      columns: { column: string; descending: boolean }[]
+      nulls_last: boolean
+    }
+  | {
+      operation_id: string
+      type: "DEDUPLICATE"
+      columns?: string[]
+      keep: "first" | "last" | "none"
+    }
+  | { operation_id: string; type: "TRIM" | "UPPERCASE" | "LOWERCASE"; column: string }
+  | {
+      operation_id: string
+      type: "REPLACE"
+      column: string
+      old: string
+      new: string
+    }
+
+export type FilterOperator =
+  | "="
+  | "!="
+  | ">"
+  | "<"
+  | ">="
+  | "<="
+  | "contains"
+  | "starts_with"
+  | "ends_with"
+  | "is_null"
+  | "is_not_null"
+
+export interface PipelineRequest {
+  operations: PipelineOperation[]
+}
+
+export interface PipelineResponse {
+  dataset_id: string
+  rows: number
+  columns: number
+  column_names: string[]
+  column_types: Record<string, string>
+  data: Record<string, unknown>[]
+}
+
+export type PipelineOperationConfig =
+  | { id: string; type: "SELECT" | "DROP"; columns: string[] }
+  | { id: string; type: "RENAME"; source: string; target: string }
+  | {
+      id: string
+      type: "FILTER"
+      column: string
+      operator: FilterOperator
+      value: string
+    }
+  | {
+      id: string
+      type: "SORT"
+      column: string
+      descending: boolean
+      nulls_last: boolean
+    }
+  | {
+      id: string
+      type: "DEDUPLICATE"
+      columns: string[]
+      keep: "first" | "last" | "none"
+    }
+  | { id: string; type: "TRIM" | "UPPERCASE" | "LOWERCASE"; column: string }
+  | {
+      id: string
+      type: "REPLACE"
+      column: string
+      old: string
+      new: string
+    }
+
+export interface ProcessedPipelineResult extends PipelineResponse {
+  source_dataset_id: string
+}
+
 export interface DatasetColumn {
   name: string
   type: string

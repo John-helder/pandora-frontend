@@ -6,6 +6,8 @@ import type {
   DatasetJoinResponse,
   DatasetProfile,
   MatchingOptions,
+  PipelineRequest,
+  PipelineResponse,
   ProcessingSession,
   SessionResponse,
   UploadFilesResponse,
@@ -255,5 +257,94 @@ export async function executeDatasetJoin(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     },
+  )
+}
+
+export async function executeDatasetPipeline(
+  sessionId: string,
+  datasetId: string,
+  payload: PipelineRequest,
+): Promise<PipelineResponse> {
+  const response: unknown = await apiRequest<unknown>(
+    `/sessions/${encodeURIComponent(sessionId)}/datasets/${encodeURIComponent(datasetId)}/pipeline`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  )
+
+  if (!isPipelineResponse(response)) {
+    throw new ApiError({
+      status: 200,
+      message: "A API retornou uma resposta de pipeline inválida.",
+      code: "INVALID_PIPELINE_RESPONSE",
+    })
+  }
+
+  const validRows =
+    Number.isInteger(response.rows) &&
+    response.rows >= 0 &&
+    response.data.length === response.rows
+  const validColumns =
+    Number.isInteger(response.columns) &&
+    response.columns >= 0 &&
+    response.column_names.length === response.columns &&
+    response.column_names.every((name) =>
+      Object.prototype.hasOwnProperty.call(response.column_types, name),
+    )
+  const validData = response.data.every(
+    (row) =>
+      typeof row === "object" &&
+      row !== null &&
+      response.column_names.every((name) =>
+        Object.prototype.hasOwnProperty.call(row, name),
+      ),
+  )
+
+  if (
+    response.dataset_id !== datasetId ||
+    !validRows ||
+    !validColumns ||
+    !validData
+  ) {
+    throw new ApiError({
+      status: 200,
+      message: "A API retornou um resultado de pipeline inconsistente.",
+      code: "INVALID_PIPELINE_RESPONSE",
+    })
+  }
+
+  return response
+}
+
+function isPipelineResponse(value: unknown): value is PipelineResponse {
+  if (typeof value !== "object" || value === null) return false
+  if (
+    !("dataset_id" in value) ||
+    typeof value.dataset_id !== "string" ||
+    !("rows" in value) ||
+    typeof value.rows !== "number" ||
+    !("columns" in value) ||
+    typeof value.columns !== "number" ||
+    !("column_names" in value) ||
+    !Array.isArray(value.column_names) ||
+    !value.column_names.every((name) => typeof name === "string") ||
+    new Set(value.column_names).size !== value.column_names.length ||
+    !("column_types" in value) ||
+    typeof value.column_types !== "object" ||
+    value.column_types === null ||
+    Array.isArray(value.column_types) ||
+    !Object.values(value.column_types).every(
+      (type) => typeof type === "string",
+    ) ||
+    !("data" in value) ||
+    !Array.isArray(value.data)
+  ) {
+    return false
+  }
+
+  return value.data.every(
+    (row) => typeof row === "object" && row !== null && !Array.isArray(row),
   )
 }

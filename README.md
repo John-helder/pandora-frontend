@@ -32,6 +32,23 @@ A interface foi desenvolvida para contemplar o fluxo de trabalho do Pandora, inc
 
 A disponibilidade das funcionalidades depende da implementação atual e da integração com o backend.
 
+Na sessão real, a etapa de transformações executa no backend operações `SELECT`,
+`DROP`, `RENAME`, `FILTER`, `SORT`, `DEDUPLICATE`, `TRIM`, `UPPERCASE`,
+`LOWERCASE` e `REPLACE` sobre o dataset derivado do JOIN. O resultado integral
+retornado pela API fica disponível à etapa de revisão, que mostra uma amostra de
+até 50 linhas com nomes e tipos das colunas. A revisão também calcula, no
+frontend e sobre todas as linhas recebidas, valores nulos, strings vazias e
+linhas completas repetidas. A API não informa contagens de registros sem
+correspondência no JOIN; não é possível inferi-las com segurança pelo resultado
+final. Na revisão, CSV e XLSX são gerados no navegador a partir do resultado
+completo do pipeline, sem uma nova chamada ou persistência no backend. Ambos
+preservam a ordem das colunas; datas XLSX são células de data quando os metadados
+e valores permitem essa conversão. Valores nulos usam o marcador `\N`, enquanto
+strings vazias permanecem vazias; uma string literal `\N` é escapada como `\\N`.
+O CSV usa UTF-8 com BOM e prefixa strings que poderiam ser interpretadas como
+fórmulas de planilha para evitar execução ao abrir o arquivo. A demonstração
+permanece separada do fluxo real.
+
 ## Requisitos
 
 Antes de executar o projeto, instale:
